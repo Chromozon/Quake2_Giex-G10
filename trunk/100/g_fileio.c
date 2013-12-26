@@ -1,5 +1,25 @@
 #include "g_local.h"
 
+// Output is stored in digestWithNullTerm (char[16] = digest(15) + \0)
+void hashPassword(const char *pw, char *digestWithNullTerm)
+{
+    const char* saltMD5 = "(_55)pE*mLQ#)";    // length = 13 without null
+    char combinedStr[32 + 13 + 1];
+    md5_state_t stateMD5;
+    md5_byte_t digestMD5[16];
+
+    memcpy(combinedStr, pw, 32);
+    memcpy(combinedStr + 32, saltMD5, 13);
+    combinedStr[45] = '\0';
+
+    md5_init(&stateMD5);
+    md5_append(&stateMD5, (const md5_byte_t *)combinedStr, 45);
+    md5_finish(&stateMD5, (md5_byte_t *)digestMD5);
+
+    memcpy(digestWithNullTerm, digestMD5, 16);
+    digestWithNullTerm[15] = '\0';
+}
+
 int checkString(char *input, char test)
 {
 	int i;
@@ -157,16 +177,19 @@ void createNewSkills(edict_t *ent, int classId) {
 	ent->client->magic = ent->client->max_magic;
 }
 
-int newCharacter(edict_t *ent, int classId, char *password) {
+int newCharacter(edict_t *ent, int classId, char *password)
+{
 	FILE *file;
 	char path[128];
-	char tmppwd[32];
+    char hashedPass[16];
 
-	strncpy(tmppwd, password, 16);
 	createNewSkills(ent, classId);
 	sprintf(path, "%s/%s.ccs", charpath->string, ent->client->pers.netname);
-	if ((file = fopen(path, "rb")) == NULL) {
-		if (strlen(password) < 3) {
+
+	if ((file = fopen(path, "rb")) == NULL)
+    {
+		if (strlen(password) < 3)
+        {
 			gi.cprintf(ent, PRINT_HIGH, "You must supply a password of at least 3 letters.\n");
 			ent->client->pers.loggedin = false;
 			ApplyMax(ent);
@@ -179,14 +202,20 @@ int newCharacter(edict_t *ent, int classId, char *password) {
 		ent->client->pers.expRemain = getClassExpLeft(ent, ent->client->pers.skills.activeClass);
 		ent->client->pers.itemchanging = -1; // set client ready to equip items
 
-		strncpy(ent->client->pers.skills.password, tmppwd, 16);
-		gi.cprintf(ent, PRINT_HIGH, "Creating new user with password %s\n", ent->client->pers.skills.password);
+        // User can enter a password up to 31 chars
+        // Password is salted, MD5 hashed, and then stored in the character file
+        hashPassword(password, hashedPass);
+		memcpy(ent->client->pers.skills.password, hashedPass, 16);
+        gi.cprintf(ent, PRINT_HIGH, "Creating new user %s\n", ent->client->pers.netname);
+
 		ent->client->pers.loggedin = true;
 		ApplyMax(ent);
 		strncpy(ent->client->pers.skills.password + 16, ent->client->pers.netname, 16);
 		saveCharacter(ent);
 		return 1;
-	} else {
+	}
+    else    // Character file already exists
+    {
 		gi.cprintf(ent, PRINT_HIGH, "Character already exists. Please choose another name.\n");
 		ent->client->pers.loggedin = false;
 		ApplyMax(ent);
@@ -197,31 +226,32 @@ int newCharacter(edict_t *ent, int classId, char *password) {
 int loadCharacter(edict_t *ent, char *password) {
 	FILE *file = NULL;
 	char path[128];
-	char tmppwd[32];
-	int test=120, i/*, i2, pu*/;
-/*	powerupinfo_t *info;
-	iteminfo_t *iteminfo;*/
-
+	char hashedPass[16];
+	int test=120, i;
 
 	if (!ent->client)
 		return 0;
 
-	if (!checkName(ent, ent->client->pers.netname)) {
+	if (!checkName(ent, ent->client->pers.netname))
 		return 0;
-	}
-	strncpy(tmppwd, password, 16);
+
 	createNewSkills(ent, 0);
 	sprintf(path, "%s/%s.ccs", charpath->string, ent->client->pers.netname);
 	file = fopen(path, "rb");
-	if (file == NULL) {
+
+	if (file == NULL)
+    {
 		gi.cprintf(ent, PRINT_HIGH, "No such character, use \"Create character\"\n");
 		createNewSkills(ent, 0);
 		ent->client->pers.loggedin = false;
 		ApplyMax(ent);
 		return 0;
 	}
+
+    // Unused coop stuff
 	fread(&test, sizeof(coop->value), 1, file);
-	if (test != coop->value) {
+	if (test != coop->value)
+    {
 		if (!test)
 			gi.cprintf(ent, PRINT_HIGH, "This character may not be used in cooperative mode\n");
 		else
@@ -232,8 +262,16 @@ int loadCharacter(edict_t *ent, char *password) {
 		ApplyMax(ent);
 		return 0;
 	}
+
+    // Check valid password
 	fread(&ent->client->pers.skills, sizeof(skills_t), 1, file);
-	if (strncmp(ent->client->pers.skills.password, password, 16)) {
+    hashPassword(password, hashedPass);
+
+    //gi.cprintf(ent, PRINT_HIGH, "Stored hash: %s\n", ent->client->pers.skills.password);
+    //gi.cprintf(ent, PRINT_HIGH, "Enterd hash: %s\n", hashedPass);
+
+	if (memcmp(ent->client->pers.skills.password, hashedPass, 15))
+    {
 		char msg[128];
 		sprintf(msg, "%s failed login attempt.\n", ent->client->pers.netname);
 		logmsg(msg);
@@ -244,12 +282,15 @@ int loadCharacter(edict_t *ent, char *password) {
 		ApplyMax(ent);
 		return 0;
 	}
+
+    // Successful login
 	fread(ent->client->pers.inventory, sizeof(ent->client->pers.inventory), 1, file);
 	ent->client->pers.loggedin = true;
 	fclose(file);
 	ApplyMax(ent);
 	ent->health = ent->max_health;
 	ent->client->magic = ent->client->max_magic;
+
 
 // Check for bad powerups
 // in Stash
@@ -338,46 +379,54 @@ int loadCharacter(edict_t *ent, char *password) {
 	}
 */
 
-//Check sanity of worn weapon
-	if (ent->client->pers.skills.wornItem[0] == -1) {
-		for (i = 0; i < GIEX_ITEMPERCHAR; i++) {
+    //Check sanity of worn weapon
+	if (ent->client->pers.skills.wornItem[0] == -1)
+    {
+		for (i = 0; i < GIEX_ITEMPERCHAR; i++)
+        {
 			iteminfo_t *iteminfo = getItemInfo(ent->client->pers.skills.itemId[i]);
-			if ((iteminfo->type & 255) == GIEX_ITEM_WEAPON) {
+			if ((iteminfo->type & 255) == GIEX_ITEM_WEAPON)
+            {
 				ent->client->pers.skills.wornItem[0] = i;
 				break;
 			}
 		}
 	}
-//Only re-equip weapon.
-/*	for (i = 0; i < 1; i++) {
+
+    //Only re-equip weapon.
+    /*	for (i = 0; i < 1; i++) {
 		ent->client->pers.skills.activatingItem[i] = ent->client->pers.skills.wornItem[i]; //Make him re-wield everything
 		ent->client->pers.skills.wornItem[i] = -1;
 		updateItemLevels(ent);
 	}*/
 
 	updateItemLevels(ent);
-//Recalculate all exp requirements
+
+    //Recalculate all exp requirements
 	ent->client->pers.expRemain = getClassExpLeft(ent, ent->client->pers.skills.activeClass);
-	for (i = 0; i < GIEX_PUPERCHAR; i++) {
-		if (ent->client->pers.skills.putype[i] == 0) {
+	for (i = 0; i < GIEX_PUPERCHAR; i++)
+    {
+		if (ent->client->pers.skills.putype[i] == 0)
 			break;
-		}
+
 		ent->client->pers.puexpRemain[i] = getPowerupCost(ent, i);
 	}
-	for (i = 0; i < GIEX_ITEMPERCHAR; i++) {
+	for (i = 0; i < GIEX_ITEMPERCHAR; i++)
+    {
 		int pu;
-		if (ent->client->pers.skills.itemId[i] == 0) {
+		if (ent->client->pers.skills.itemId[i] == 0)
 			break;
-		}
-		for (pu = 0; pu < GIEX_PUPERITEM; pu++) {
-			if (ent->client->pers.skills.item_putype[i][pu] == 0) {
+
+		for (pu = 0; pu < GIEX_PUPERITEM; pu++)
+        {
+			if (ent->client->pers.skills.item_putype[i][pu] == 0)
 				break;
-			}
+
 			ent->client->pers.item_puexpRemain[i][pu] = getItemPowerupCost(ent, i, pu);
 		}
 	}
-
-	for (i = 0; i < GIEX_BASEITEMS; i++) {
+	for (i = 0; i < GIEX_BASEITEMS; i++)
+    {
 		ent->client->pers.skills.activatingItem[i] = -1;
 	}
 	ent->client->pers.itemchanging = -1; // set client ready to equip items

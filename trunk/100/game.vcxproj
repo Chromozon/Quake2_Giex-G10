@@ -181,6 +181,7 @@
     <ClCompile Include="g_turret.c" />
     <ClCompile Include="g_utils.c" />
     <ClCompile Include="g_weapon.c" />
+    <ClCompile Include="md5.c" />
     <ClCompile Include="m_actor.c" />
     <ClCompile Include="m_berserk.c" />
     <ClCompile Include="m_boss2.c" />
@@ -216,6 +217,7 @@
     <ClInclude Include="g_classids.h" />
     <ClInclude Include="g_local.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="md5.h" />
     <ClInclude Include="m_actor.h" />
     <ClInclude Include="m_berserk.h" />
     <ClInclude Include="m_boss2.h" />

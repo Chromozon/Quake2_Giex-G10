@@ -2344,6 +2344,7 @@ void ClientBeginServerFrame (edict_t *ent)
 
 	if (aclvl > 40) // To cap ammo regen penalty
 		aclvl = 40;
+	aclvl = 0;	// Grape: removed ammo regen penalty with spell affinity (don't know why this is)
 	client = ent->client;
 
 	// check idle timer
@@ -2429,10 +2430,15 @@ void ClientBeginServerFrame (edict_t *ent)
 			}
 		}
 	}
-	if ((((int)ceil(level.time * 10 - 0.5) % 10) == 0) && (ent->health > 0)) {
+	if ((((int)ceil(level.time * 10 - 0.5) % 10) == 0) && (ent->health > 0))
+	{
 		// Health regen
-		if (( (lvl = ent->client->pers.skill[30]) > 0) && (ent->health < ent->max_health)) {
-			ent->health += (int)(2.6 * lvl);
+		// Grape: updated multiplier from 2.6 to 10
+		// Grape: each lvl of cleric gives .1 lvl of health regen (250 cleric = 25 health regen)
+		lvl = ent->client->pers.skill[30] + (ent->client->pers.skills.classLevel[2] / 10);
+		if ((lvl > 0) && (ent->health < ent->max_health))
+		{
+			ent->health += (int)(10.0 * lvl);	// changed 2.6 to 10.0
 			if (ent->health > ent->max_health)
 				ent->health = ent->max_health;
 		}
@@ -2451,7 +2457,7 @@ void ClientBeginServerFrame (edict_t *ent)
 // Ammo regen from powerup
 			gitem_t *item;
 			int index;
-			float mult = (0.07 * (float) lvl) * (1.0-(0.024 * (float) aclvl));
+			float mult = (0.1 * (float) lvl) * (1.0-(0.024 * (float) aclvl));	// Grape: changed .07 to .1
 			if (mult < 0.05)
 				mult = 0.05;
 

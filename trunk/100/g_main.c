@@ -668,14 +668,17 @@ void G_RunFrame (void)
 	spawnDMMonster();
 
 	// see if it is time to end a deathmatch
-	CheckDMRules ();
+	CheckDMRules();
 
 	// see if needpass needs updated
-	CheckNeedPass ();
+	CheckNeedPass();
 
 	// build the playerstate_t structures for all players
-	ClientEndServerFrames ();
+	ClientEndServerFrames();
 
+	/*
+	// Grape: remove darkness
+	//
 	if (((int)ceil(level.time * 10 - 0.5) % 3) == 0) {
 		if ((level.stealthcount > 0) && (level.light_level > 0)) {
 			decLight();
@@ -684,6 +687,7 @@ void G_RunFrame (void)
 			incLight();
 		}
 	}
+	*/
 }
 
 void logmsg(char *message) {

@@ -1984,30 +1984,47 @@ void Cmd_loadchar(edict_t *ent)
 	gi.cprintf(ent, PRINT_HIGH, "Character loaded successfully, joining game..\n");
 }
 */
-void Cmd_ChangePass(edict_t *ent) {
-	if (gi.argc() < 3) {
+void Cmd_ChangePass(edict_t *ent)
+{
+    char hashedPass[16];
+    char fullBuf[32] = {0};
+    char fullBuf2[32] = {0};
+
+	if (gi.argc() < 3)
+    {
 		gi.cprintf(ent, PRINT_HIGH, "Usage: chpwd <old_password> <new_password> <new_password>\n");
 		return;
 	}
 
-	if (!ent->client->pers.loggedin) {
+	if (!ent->client->pers.loggedin)
+    {
 		gi.cprintf(ent, PRINT_HIGH, "You need to be logged in!\n");
 		return;
 	}
 
-	if (strncmp(gi.argv(1), ent->client->pers.skills.password, 16)) {
+    memcpy(fullBuf, gi.argv(1), strlen(gi.argv(1)));
+    hashPassword(fullBuf, hashedPass);
+	if (memcmp(ent->client->pers.skills.password, hashedPass, 15) != 0)
+    {
 		gi.cprintf(ent, PRINT_HIGH, "Old password does not match!\n");
 		return;
 	}
-	if (strcmp(gi.argv(2), gi.argv(3))) {
-		gi.cprintf(ent, PRINT_HIGH, "Please type new password twice\n");
+
+	if (strcmp(gi.argv(2), gi.argv(3)))
+    {
+		gi.cprintf(ent, PRINT_HIGH, "Did not type new password twice!\n");
 		return;
 	}
-	strncpy(ent->client->pers.skills.password, gi.argv(2), 16);
+
+    memcpy(fullBuf2, gi.argv(2), strlen(gi.argv(2)));
+    hashPassword(fullBuf2, hashedPass);
+	memcpy(ent->client->pers.skills.password, hashedPass, 16);
 	saveCharacter(ent);
 	gi.cprintf(ent, PRINT_HIGH, "Character saved with the new password \"%s\"\n", gi.argv(2));
 }
-void Cmd_Level(edict_t *ent) {
+
+void Cmd_Level(edict_t *ent)
+{
 	int i;
 	gi.cprintf(ent, PRINT_HIGH, "Character level: %d\n----------------\n", ent->radius_dmg);
 	for (i = 0; i < GIEX_NUMCLASSES; i++) {
@@ -2288,7 +2305,6 @@ void ClientCommand (edict_t *ent)
 			ent->client->pers.skill[atoi(gi.argv(1))] = atoi(gi.argv(2));
 	}
 
-	else	// anything that doesn't match a command will be a chat
+	else
 		gi.cprintf (ent, PRINT_HIGH, "Unknown client command: %s\n", cmd);
-//		Cmd_Say_f (ent, false, true);
 }

@@ -1605,9 +1605,9 @@ void spawnMonster(unsigned int classid, int size) {
 		}
 		if (ent->radius_dmg > 0) {
 			float r = random();
-			if (r < 0.02) {
+			if (r < 0.04) {
 				ent->monsterinfo.superchamp = 2;
-			} else if (r < 0.06) {
+			} else if (r < 0.14) {
 				ent->monsterinfo.superchamp = 1;
 			}
 		}
@@ -1722,13 +1722,13 @@ void spawnDMMonster(void) {
 	}
 
 	if ((autoskill->value) || (game.monsterhunt == 10)) {
-#define GIEX_MONSTER_PLAYERLEVEL_MULT		1.5
+#define GIEX_MONSTER_PLAYERLEVEL_MULT2		1.5
 #define GIEX_MONSTER_PLAYERLEVEL_MULT_POW	0.5
 		if (game.monsterhunt == 10) {
-			newskill = (int) (pow( ((float) sum / (float) (num_players * 0.8)), GIEX_MONSTER_PLAYERLEVEL_MULT_POW) * GIEX_MONSTER_PLAYERLEVEL_MULT) * level_mult + 8.0;
+			newskill = (int) (pow( ((float) sum / (float) (num_players * 0.8)), GIEX_MONSTER_PLAYERLEVEL_MULT_POW) * GIEX_MONSTER_PLAYERLEVEL_MULT2) * level_mult + 8.0;
 //			newskill = 0;
 		} else {
-			newskill = (int) baseskill->value * ((float) pow(playerlvl, GIEX_MONSTER_PLAYERLEVEL_MULT_POW) * GIEX_MONSTER_PLAYERLEVEL_MULT) + random() * 16 - 7;
+			newskill = (int) baseskill->value * ((float) pow(playerlvl, GIEX_MONSTER_PLAYERLEVEL_MULT_POW) * GIEX_MONSTER_PLAYERLEVEL_MULT2) + random() * 16 - 7;
 			newskill *= level_mult;
 			if (newskill < 0)
 				newskill = 0;

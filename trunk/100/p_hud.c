@@ -572,54 +572,68 @@ void G_SetStats (edict_t *ent) {
 	// Identify
 	//
 
-	if (((int)ceil(level.time * 10 - 0.5) % 5) == (((ent-g_edicts) - 1) % 5)) {
+	if (((int)ceil(level.time * 10 - 0.5) % 5) == (((ent-g_edicts) - 1) % 5))
+	{
 		AngleVectors(ent->client->v_angle, forward, NULL, NULL);
 		VectorCopy(ent->s.origin, offset);
 		offset[2] += ent->viewheight - 8;
 		VectorMA(offset, 2048, forward, end);
 		tr = gi.trace (offset, NULL, NULL, end, ent, MASK_SHOT);
 
-		if ((tr.fraction >= 1.0) || (!tr.ent) || (!tr.ent->client && !(tr.ent->svflags & SVF_MONSTER))) {
+		if ((tr.fraction >= 1.0) || (!tr.ent) || (!tr.ent->client && !(tr.ent->svflags & SVF_MONSTER)))
+		{
 			VectorSet(box1, -20, -20, -20);
 			VectorSet(box2, 20, 20, 20);
 			tr = gi.trace (offset, box1, box2, end, ent, MASK_SHOT);
 		}
 
-		if ((tr.fraction < 1.0) && tr.ent && (tr.ent->client || tr.ent->svflags & SVF_MONSTER)) {
+		if ((tr.fraction < 1.0) && tr.ent && (tr.ent->client || tr.ent->svflags & SVF_MONSTER))
+		{
 			char result[1024];
 			char *tmp;
 			int from = 0;
-// Identifying a player
-			if (tr.ent->client) {
+
+			// Identifying a player
+			if (tr.ent->client)
+			{
 				sprintf(result + from, "%s", tr.ent->client->pers.netname);
 				from += strlen(tr.ent->client->pers.netname);
 
-				if (ent->client->pers.skill[70] > 1) {
+				//if (ent->client->pers.skill[70] >= 0)
+                if (0)
+				{
 					int i;
-					for (i = 0; i < GIEX_NUMCLASSES; i++) {
-						if(tr.ent->client->pers.skills.classLevel[i] > 0) {
+					for (i = 0; i < GIEX_NUMCLASSES; i++)
+					{
+						if(tr.ent->client->pers.skills.classLevel[i] > 0)
+						{
 							classinfo_t *clInfo = getClassInfo(i);
 							tmp = getAbrevValue(tr.ent->client->pers.skills.classLevel[i]);
 							sprintf(result + from, " %c: %s", clInfo->name[0], tmp);
 							from += strlen(tmp) + 4;
 						}
 					}
-				} else if (ent->client->pers.skill[70] > 0) {
+				}
+				else //else if (ent->client->pers.skill[70] > 0)
+				{
 					tmp = getAbrevValue(tr.ent->radius_dmg);
 					sprintf(result + from, " L: %s", tmp);
 					from += strlen(tmp) + 4;
 				}
-// Identifying a monster
-			} else if ((tr.ent->svflags & SVF_MONSTER) && ((tr.ent->radius_dmg) || (ent->client->pers.skill[70] > 1))) {
+			}	// Identifying a monster
+			else if ((tr.ent->svflags & SVF_MONSTER) && ((tr.ent->radius_dmg) || (ent->client->pers.skill[70] >= 0)))
+			{
 				sprintf(result + from, "%s", tr.ent->monsterinfo.name);
 				from += strlen(tr.ent->monsterinfo.name);
 
-				if (ent->client->pers.skill[70] > 1) {
+				if (ent->client->pers.skill[70] >= 0)
+				{
 					tmp = getAbrevValue(tr.ent->monsterinfo.level);
 					sprintf(result + from, " L: %s", tmp);
 					from += strlen(tmp) + 4;
 				}
-				if ((ent->client->pers.skill[70] > 0) && (tr.ent->health > 0) && (tr.ent->enemy)) {
+				if ((ent->client->pers.skill[70] >= 0) && (tr.ent->health > 0) && (tr.ent->enemy))
+				{
 					gi.WriteByte (svc_temp_entity);
 					gi.WriteByte (TE_PARASITE_ATTACK);
 					gi.WriteShort (tr.ent - g_edicts);
@@ -694,7 +708,7 @@ void G_SetStats (edict_t *ent) {
 					from++;
 				}
 			}
-			if ((ent->client->pers.skill[70] > 2) && (tr.ent->health > 0)) {
+			if ((ent->client->pers.skill[70] >= 0) && (tr.ent->health > 0)) {
 				tmp = getAbrevValue(tr.ent->health);
 				sprintf(result + from, " H: %s", tmp);
 				from += strlen(tmp) + 4;

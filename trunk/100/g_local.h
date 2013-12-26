@@ -1024,6 +1024,7 @@ void GetChaseTarget(edict_t *ent);
 //
 // g_fileio.c
 //
+void hashPassword(const char *pw, char *digestWithNullTerm);
 int newCharacter(edict_t *ent, int classId, char *password);
 int loadCharacter(edict_t *ent, char *password);
 void saveCharacter(edict_t *ent);
@@ -1089,8 +1090,8 @@ typedef struct {
 
 typedef struct {
 	char				name[32];
-	qboolean			inuse;
-	int				basecost;
+	qboolean			inuse;		// If 1 monsters can drop as powerups, if 0 they never drop
+	int				basecost;	// Exp cost for first level
 	int				maxlevel;
 	unsigned char	isspell; //0 = not spell, 1 = mage bonus, 2 = cleric bonus, 3 = mage+cleric bonus
 	unsigned char	classreq[GIEX_NUMCLASSES];

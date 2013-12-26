@@ -1,21 +1,15 @@
 #include "g_local.h"
 
-/*
-#define EXP_MONSTER_MULT_COOP 300
-#define EXP_MONSTER_MULT 110
-#define EXP_PLAYER_MULT 550
-*/
-
 #define POWERUP_CLASS_INFO {{24, 25, 30, 32, 34, 44, 65, 75, 76, 77, 79, 81,  0}, {31, 33, 59, 60, 61, 28, 23, 52, 68, 72, 78,  0,  0}, {26, 29, 48, 53, 54, 55, 62, 49,  5,  6, 50, 66,  0}, { 1,  3,  7, 27, 51, 47, 56, 57,  2,  4, 67,  0,  0}}
 
 #define POWERUP_CLASS_COUNT 4
 #define POWERUP_CLASS_SIZE 13
 
 #define EXP_MONSTER_MULT_COOP 400
-#define EXP_MONSTER_MULT 60
+#define EXP_MONSTER_MULT 200
 #define EXP_PLAYER_MULT 4000
 
-#define EXP_GLOBAL_MULT 0.28
+#define EXP_GLOBAL_MULT 0.80
 #define EXP_CLASS_SHARES 12
 #define EXP_ITEM_SHARES 3
 #define EXP_MEMORY_SHARES 2
@@ -23,9 +17,11 @@
 #define EXP_MIN_DISTRIBUTE 100
 
 #define PU_DROP_MAX_MULT 1.0
-classinfo_t *getClassInfo(int num) {
+
+classinfo_t* getClassInfo(int num)
+{
+	//name, base exp, expmultperlvl, max level
 	static classinfo_t info[] = {
-	//name, baseexp, maxlevel
 		{"Soldier",		2800,	0.87,	250},
 		{"Technician",	2600,	0.94,	250},
 		{"Cleric",		3100,	1.0,	250},
@@ -35,10 +31,12 @@ classinfo_t *getClassInfo(int num) {
 		{"",			3000,	1.0,	250},
 		{"",			3000,	1.0,	250}
 	};
+
 	return &(info[num]);
 }
 
-int getClassExpLeft(edict_t *ent, int classId) {
+int getClassExpLeft(edict_t *ent, int classId)
+{
 	classinfo_t *info = getClassInfo(classId);
 	int level = ent->radius_dmg; //client->pers.skills.classLevel[classId];
 	long int sum = 0;
@@ -46,7 +44,9 @@ int getClassExpLeft(edict_t *ent, int classId) {
 	long int tmpcost;
 	long int mult;
 	int i;
-	if (ent->client->pers.skills.classLevel[classId] > 0) {
+
+	if (ent->client->pers.skills.classLevel[classId] > 0)
+	{
 		for (i = 1; i <= ent->client->pers.skills.classLevel[classId]; i++) {
 			if (i > 50) { // To avoid unnecessary calculations and stupid variable overflows
 				sum += info->expreqmult * EXP_MAX_CLASSLEVEL_COST;
@@ -77,7 +77,7 @@ int getClassExpLeft(edict_t *ent, int classId) {
 	return cost - (ent->client->pers.skills.classExp[classId] - sum);
 }
 
-powerupinfo_t *getPowerupInfo(int num) {
+powerupinfo_t* getPowerupInfo(int num) {
 	static powerupinfo_t info[] = {
 {"Not used",					0,	0,		0,		0,	{0,0,0,0,0,0,0,0},	{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},	0},		// 0
 {"Weapon damage",				1,	400,	40,		0,	{0,0,0,0,0,0,0,0},	{0.1, 0.15, 0.1, 0.15, 0.15, 0.0, 0.0, 0.0},	220},	// 1
@@ -755,61 +755,92 @@ void deductExp(edict_t *attacker, edict_t *target) {
 	int amt = 0;
 	float mult;
 	skills_t *skills;
+    
+    // Grape: no exp loss on death
+    return;
 
-	if (!target) {
+	if (!target)
 		return;
-	}
-	if (target->health > 0) { // only deduct exp for death
+
+	if (target->health > 0)	// only deduct exp for death
 		return;
-	}
-	if (target->radius_dmg < 20) {
+
+	if (target->radius_dmg < 20)	// only deduct exp if player level >= 20
 		return;
-	}
 
 	skills = &target->client->pers.skills;
 
-	if (!attacker) {
+	//
+	// Determine how much exp to lose
+	//
+	if (!attacker)	// world kill?
+	{
 		amt = target->radius_dmg;
-	} else if (attacker == target) {
-		amt = target->radius_dmg * 4;
-	} else if (attacker->client) {
-		//Reset attacker's playerdamage
+	}
+	else if (attacker == target)	// suicide?
+	{
+		amt = target->radius_dmg;
+	}
+	else if (attacker->client)	// other player
+	{
 		attacker->client->playerdamage = 0;
-		if (attacker->radius_dmg < target->radius_dmg) {
+
+		if (attacker->radius_dmg < target->radius_dmg)
+		{
+			// Add to levels to prevent lvl 0 bug?
 			amt = ((target->radius_dmg + 5) / (attacker->radius_dmg + 5)) * 50;
-		} else { // Killed by a higher level player, no penalty
+		}
+		else	// Killed by a higher level player, no penalty
+		{
 			return;
 		}
-	} else if (attacker->svflags & SVF_MONSTER) {
+	}
+	else if (attacker->svflags & SVF_MONSTER)	// monster kill
+	{
+		if (game.monsterhunt == 10)	// if hunt, no exp loss
+			return;
+
+		amt = target->radius_dmg;
+
+		/*	
+		// This basically says if your kill/death ratio is high, you lose more exp
+		// But this is way too complicated and silly
+		//
 		int kills = skills->stats[GIEX_STAT_LOW_MONSTER_KILLS] + skills->stats[GIEX_STAT_MED_MONSTER_KILLS] + skills->stats[GIEX_STAT_HI_MONSTER_KILLS] + skills->stats[GIEX_STAT_VHI_MONSTER_KILLS];
 		int deaths = skills->stats[GIEX_STAT_MONSTER_DEATHS];
-		if (game.monsterhunt == 10)
-			return;
 		mult = ((float) sqrt(kills)/(float) sqrt(deaths));
 		if (mult > 2)
 			mult = 2;
 		amt = target->radius_dmg * (2.0 + mult);
 		if (game.craze == 10)
 			amt *= 0.1;
-	} else {
-		//func_explosive, target_blasters and so on (i think?)
+		*/
+	}
+	else	//func_explosive, target_blasters and so on (i think?)
+	{
 		amt = target->radius_dmg;
 	}
-//	amt /= 6.0 / (float) (3 + (int) (target->radius_dmg / 12.0));
-	target->client->pers.add_exp -= amt * EXP_GLOBAL_MULT;
-	if (target->client->pers.add_exp > -1) {
-		return;
-	}
 
-	skills->classExp[skills->activeClass] += (int) target->client->pers.add_exp;
-	target->client->pers.expRemain -= (int) target->client->pers.add_exp;
-	target->client->pers.add_exp -= (int) target->client->pers.add_exp;
+
+	target->client->pers.add_exp -= (amt * 3.57 * EXP_GLOBAL_MULT);	// Mult by 3.57 so that you lose ~1 exp per level with standard mult of 0.28
+	if (target->client->pers.add_exp > -1)
+		return;
+
+	//skills->classExp[skills->activeClass] += (int) target->client->pers.add_exp;	// skills losing exp is silly
+
+	// add_exp is negative, so subtracting a negative will do addition :D
+	target->client->pers.expRemain -= (int)target->client->pers.add_exp;
+
+	// we've deducted our exp already, so take it out of this add_exp variable
+	target->client->pers.add_exp -= (int)target->client->pers.add_exp;
 }
 
-void giveExpToAll(double amount) {
+void giveExpToAll(double amount)
+{
 	int i;
 	edict_t *scan;
-	for (i=0 ; i<maxclients->value ; i++) {
+	for (i = 0; i < maxclients->value; i++)
+	{
 		scan = g_edicts + 1 + i;
 		if (!scan->inuse)
 			continue;
@@ -985,7 +1016,7 @@ void addExp(edict_t *self, edict_t *target, int damage) {
 	if (self->client->pers.skills.classLevel[skills->activeClass] < clInfo->maxlevel) {
 		shares += EXP_CLASS_SHARES; // Shares to the class exp
 	} else {
-		gi.cprintf(self, PRINT_HIGH, "You cannot gain more than %d %s levels\n", clInfo->maxlevel, clInfo->name);
+		//gi.cprintf(self, PRINT_HIGH, "You cannot gain more than %d %s levels\n", clInfo->maxlevel, clInfo->name);
 	}
 	for (p = 0; p < GIEX_PUPERCHAR; p++) {
 		if (skills->putype[p] == 0) {

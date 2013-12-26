@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "md5.h"
+
 #if (defined _M_IX86 || defined __i386__) && !defined C_ONLY && !defined __sun__
 #define id386	1
 #else
