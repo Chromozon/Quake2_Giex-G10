@@ -1,0 +1,60 @@
+
+New character creation, load/save character, login
+    g_fileio.c
+    
+Exp loss on death
+    g_powerups.c
+
+User commands
+    g_cmds.c
+    
+Server/Admin commands
+    g_svcmds.c
+    
+Experience Multipliers
+    g_powerups.c
+
+Monster Spawning
+    g_monster.c
+    
+Identify
+    p_hud.c
+    
+Weapons/Items
+    g_giexitems.c
+    
+Ammo/Magic/Armor/Health Regen
+    p_client.c
+    
+Damage, Auras
+    g_combat.c (T_Damage function)
+    
+Changelog
+
+    - All passwords are salted and hashed before being stored
+    - Fixed chpwd to work with new hashed passwords
+    - Disabled total darkness (stealth)
+    - Everyone gets free permanent lvl 2 identify
+    - No exp loss on death
+    - Increased overall exp
+    - Increased spawn rate of boss monsters
+    
+    - Each level of cleric gives .1 health regen (250 cleric = 25 health regen = 250 health per second)
+    - Increased health regen to 10 * lvl of skill
+    - Removed ammo regen penalty with spell affinity
+    - Slightly increased ammo regen amounts (spam away!)
+    - Removed spammy message that says you cannot get more than 250 levels of a class
+    
+    - Increased max items to 100 (up from 30)
+    - Increased max spells in memory to 20 (up from 10)
+    - Increased carrying capacity for powerups to 50 (up from 20)
+    - Removed parasite attack animation when idenitfy is used
+    - All classes now have the same baseexp and exp per level multipliers (3000 and 1.0x)
+    
+TODO
+
+    - Add a "reset password" admin command
+    - Implement a command that shows levels of all classes you have
+    - Allow experience multiplier to be set by server config
+    
+    - Fix ammo regen bug (above 10 minutes)

@@ -634,12 +634,15 @@ void G_SetStats (edict_t *ent) {
 				}
 				if ((ent->client->pers.skill[70] >= 0) && (tr.ent->health > 0) && (tr.ent->enemy))
 				{
+                    // Grape: removing the parasite attack animation when identify is used
+                    /*
 					gi.WriteByte (svc_temp_entity);
 					gi.WriteByte (TE_PARASITE_ATTACK);
 					gi.WriteShort (tr.ent - g_edicts);
 					gi.WritePosition (tr.ent->s.origin);
 					gi.WritePosition (tr.ent->enemy->s.origin);
 					gi.unicast(ent, false);
+                    */
 				}
 				if ((tr.ent->radius_dmg && tr.ent->monsterinfo.ability)) {
 					sprintf(result + from, " ");

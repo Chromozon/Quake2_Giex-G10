@@ -10,7 +10,7 @@
 #include "game.h"
 
 // the "gameversion" client command will print this plus compile date
-#define	GAMEVERSION	"giex"
+#define	GAMEVERSION	"giexg10"
 
 // protocol bytes that can be directly added to messages
 #define	svc_muzzleflash		1
@@ -84,9 +84,9 @@
 #define GIEX_ITEM_MAGE 2048
 #define GIEX_ITEM_VAMPIRE 4096
 
-#define GIEX_PUPERCHAR 10 // Max powerups plugged in per character
-#define GIEX_PUCARRYPERCHAR 20 // Max powerups carriable per character
-#define GIEX_ITEMPERCHAR 30 // Max items per character
+#define GIEX_PUPERCHAR 20 // Max powerups plugged in per character
+#define GIEX_PUCARRYPERCHAR 50 // Max powerups carriable per character
+#define GIEX_ITEMPERCHAR 100 // Max items per character
 #define GIEX_ENCHPERITEM 10 // Max enchantments per item
 
 #define GIEX_AUTOPERITEM 5 // Max automatic powerups for item
@@ -223,17 +223,6 @@ MOVETYPE_BOUNCE,
 MOVETYPE_FLYRICOCHET
 } movetype_t;
 
-
-/*
-typedef struct
-{
-	int		base_count;
-	int		max_count;
-	float	normal_protection;
-	float	energy_protection;
-	int		armor;
-} gitem_armor_t;
-*/
 
 // gitem_t->flags
 #define	IT_WEAPON		1		// use makes active weapon

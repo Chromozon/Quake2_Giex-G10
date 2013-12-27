@@ -6,10 +6,10 @@
 #define POWERUP_CLASS_SIZE 13
 
 #define EXP_MONSTER_MULT_COOP 400
-#define EXP_MONSTER_MULT 200
+#define EXP_MONSTER_MULT 100
 #define EXP_PLAYER_MULT 4000
 
-#define EXP_GLOBAL_MULT 0.80
+#define EXP_GLOBAL_MULT 0.50
 #define EXP_CLASS_SHARES 12
 #define EXP_ITEM_SHARES 3
 #define EXP_MEMORY_SHARES 2
@@ -22,11 +22,11 @@ classinfo_t* getClassInfo(int num)
 {
 	//name, base exp, expmultperlvl, max level
 	static classinfo_t info[] = {
-		{"Soldier",		2800,	0.87,	250},
-		{"Technician",	2600,	0.94,	250},
-		{"Cleric",		3100,	1.0,	250},
-		{"Mage",		2000,	0.82,	250},
-		{"Ghoul",		3200,	1.01,	250},
+		{"Soldier",		3000,	1.0,	250},
+		{"Technician",	3000,	1.0,	250},
+		{"Cleric",		3000,	1.0,	250},
+		{"Mage",		3000,	1.0,	250},
+		{"Ghoul",		3000,	1.0,	250},
 		{"",			3000,	1.0,	250},
 		{"",			3000,	1.0,	250},
 		{"",			3000,	1.0,	250}
