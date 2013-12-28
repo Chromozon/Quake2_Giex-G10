@@ -752,87 +752,8 @@ void ApplyMax(edict_t *self) {
 }
 
 void deductExp(edict_t *attacker, edict_t *target) {
-	int amt = 0;
-	float mult;
-	skills_t *skills;
-    
     // Grape: no exp loss on death
     return;
-
-	if (!target)
-		return;
-
-	if (target->health > 0)	// only deduct exp for death
-		return;
-
-	if (target->radius_dmg < 20)	// only deduct exp if player level >= 20
-		return;
-
-	skills = &target->client->pers.skills;
-
-	//
-	// Determine how much exp to lose
-	//
-	if (!attacker)	// world kill?
-	{
-		amt = target->radius_dmg;
-	}
-	else if (attacker == target)	// suicide?
-	{
-		amt = target->radius_dmg;
-	}
-	else if (attacker->client)	// other player
-	{
-		attacker->client->playerdamage = 0;
-
-		if (attacker->radius_dmg < target->radius_dmg)
-		{
-			// Add to levels to prevent lvl 0 bug?
-			amt = ((target->radius_dmg + 5) / (attacker->radius_dmg + 5)) * 50;
-		}
-		else	// Killed by a higher level player, no penalty
-		{
-			return;
-		}
-	}
-	else if (attacker->svflags & SVF_MONSTER)	// monster kill
-	{
-		if (game.monsterhunt == 10)	// if hunt, no exp loss
-			return;
-
-		amt = target->radius_dmg;
-
-		/*	
-		// This basically says if your kill/death ratio is high, you lose more exp
-		// But this is way too complicated and silly
-		//
-		int kills = skills->stats[GIEX_STAT_LOW_MONSTER_KILLS] + skills->stats[GIEX_STAT_MED_MONSTER_KILLS] + skills->stats[GIEX_STAT_HI_MONSTER_KILLS] + skills->stats[GIEX_STAT_VHI_MONSTER_KILLS];
-		int deaths = skills->stats[GIEX_STAT_MONSTER_DEATHS];
-		mult = ((float) sqrt(kills)/(float) sqrt(deaths));
-		if (mult > 2)
-			mult = 2;
-		amt = target->radius_dmg * (2.0 + mult);
-		if (game.craze == 10)
-			amt *= 0.1;
-		*/
-	}
-	else	//func_explosive, target_blasters and so on (i think?)
-	{
-		amt = target->radius_dmg;
-	}
-
-
-	target->client->pers.add_exp -= (amt * 3.57 * EXP_GLOBAL_MULT);	// Mult by 3.57 so that you lose ~1 exp per level with standard mult of 0.28
-	if (target->client->pers.add_exp > -1)
-		return;
-
-	//skills->classExp[skills->activeClass] += (int) target->client->pers.add_exp;	// skills losing exp is silly
-
-	// add_exp is negative, so subtracting a negative will do addition :D
-	target->client->pers.expRemain -= (int)target->client->pers.add_exp;
-
-	// we've deducted our exp already, so take it out of this add_exp variable
-	target->client->pers.add_exp -= (int)target->client->pers.add_exp;
 }
 
 void giveExpToAll(double amount)

@@ -6,6 +6,7 @@ level_locals_t	level;
 game_import_t	gi;
 game_export_t	globals;
 spawn_temp_t	st;
+level_highscores_t levelHighscores;
 
 int	sm_meat_index;
 int	snd_fry;
@@ -263,6 +264,8 @@ void EndDMLevel (void)
 	edict_t		*ent;
 	char *s, *t, *f;
 	static const char *seps = " ,\n\r";
+
+    GiexClearHighscores(&levelHighscores);
 
 	// stay on same level flag
 /*	if ((int)dmflags->value & DF_SAME_LEVEL) {
@@ -699,4 +702,50 @@ void logmsg(char *message) {
 	fprintf(logfile, "%s", message);
 	fclose(logfile);
 	logfile = NULL;
+}
+
+
+
+
+void GiexClearHighscores(level_highscores_t* scores)
+{
+    scores->playerListSize = 0;
+}
+
+void GiexUpdateHighscores(level_highscores_t* scores, edict_t* ent, qboolean monsterKill)
+{
+    qboolean playerAlreadyInList = false;
+    int i = 0;
+
+    // First we need to check to see if the player is already in the active list
+    for (i = 0; i < scores->playerListSize; ++i)
+    {
+        if (strncmp(scores->playerList[i].playerName, ent->client->pers.netname, 16) == 0)
+        {
+            playerAlreadyInList = true;
+            break;
+        }
+    }
+
+    // If the player is not in the list, make a new entry if we have room
+    if (!playerAlreadyInList)
+    {
+        if (scores->playerListSize < 20)
+        {
+            strncpy(scores->playerList[i].playerName, ent->client->pers.netname, strnlen_s(ent->client->pers.netname, 16));
+            scores->playerList[i].totalMonsterKills = 0;
+            scores->playerList[i].totalPlayerKills = 0;
+            scores->playerListSize++;
+        }
+        else
+            return; // have to return early if we don't have room so as to not override other values in the table
+    }
+
+    // Finally, update the entry
+    scores->playerList[i].playerLevel = ent->radius_dmg;
+    scores->playerList[i].timestamp = time(NULL);
+    if (monsterKill)
+        scores->playerList[i].totalMonsterKills++;
+    else
+        scores->playerList[i].totalPlayerKills++;
 }

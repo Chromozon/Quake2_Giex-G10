@@ -45,16 +45,17 @@ Changelog
     - Slightly increased ammo regen amounts (spam away!)
     - Removed spammy message that says you cannot get more than 250 levels of a class
     
-    - Increased max items to 100 (up from 30)
-    - Increased max spells in memory to 20 (up from 10)
-    - Increased carrying capacity for powerups to 50 (up from 20)
+    - Increased max items to 200 (up from 30)
+    - Increased max spells in memory to 100 (up from 10)
+    - Increased carrying capacity for powerups to 100 (up from 20)
     - Removed parasite attack animation when idenitfy is used
     - All classes now have the same baseexp and exp per level multipliers (3000 and 1.0x)
+    - Added an "allstats" command that prints class levels, skills, kills, and deaths to the console
+    - Added a "highscores" command that shows the total kills for each player per level
     
 TODO
 
     - Add a "reset password" admin command
-    - Implement a command that shows levels of all classes you have
     - Allow experience multiplier to be set by server config
     
     - Fix ammo regen bug (above 10 minutes)

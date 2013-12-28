@@ -72,14 +72,109 @@ qboolean CanDamage (edict_t *targ, edict_t *inflictor)
 Killed
 ============
 */
+/*
+targ		entity that is being damaged
+inflictor	entity that is causing the damage
+attacker	entity that caused the inflictor to damage
+example: targ=monster, inflictor=rocket, attacker=player
+*/
 void monster_corpse_think(edict_t *ent);
-void Killed (edict_t *targ, edict_t *inflictor, edict_t *attacker, int damage, vec3_t point) {
-//	if ((targ->client) && (targ->health < -999))
-//		targ->health = -999;
+void Killed (edict_t* targ, edict_t* inflictor, edict_t* attacker, int damage, vec3_t point)
+{
+    if (targ->client) // A player got killed
+    {
+        targ->enemy = attacker; // Maybe this is used for death messages?
 
+        if (attacker->client) // Player got killed by another player
+        {
+            if (targ->client == attacker->client) // Suicide
+            {
+                targ->client->pers.skills.stats[GIEX_STAT_OTHER_DEATHS]++;
+            }
+            else if (targ->radius_dmg > attacker->radius_dmg) // Killed by lower level player
+            {
+                targ->client->pers.skills.stats[GIEX_STAT_LOWER_PLAYER_DEATHS]++;
+                attacker->client->pers.skills.stats[GIEX_STAT_HIGHER_PLAYER_KILLS]++;
+                GiexUpdateHighscores(&levelHighscores, attacker, false);
+            }
+            else // Killed by higher level player
+            {
+                targ->client->pers.skills.stats[GIEX_STAT_HIGHER_PLAYER_DEATHS]++;
+                attacker->client->pers.skills.stats[GIEX_STAT_LOWER_PLAYER_KILLS]++;
+                GiexUpdateHighscores(&levelHighscores, attacker, false);
+            }
+        }
+        else // Player got killed by monster or world
+        {
+            if (attacker->svflags & SVF_MONSTER) // Player got killed by monster
+            {
+                targ->client->pers.skills.stats[GIEX_STAT_MONSTER_DEATHS]++;
+            }
+            else // Player got killed by something in the world (suicide)
+            {
+                targ->client->pers.skills.stats[GIEX_STAT_OTHER_DEATHS]++;
+            }
+        }
+    }
+    else if ((targ->svflags & SVF_MONSTER) && (targ->deadflag != DEAD_DEAD) && !(targ->monsterinfo.aiflags & AI_GOOD_GUY)) // A monster got killed
+    {
+        if (attacker->client) // Monster got killed by player
+        {
+            GiexUpdateHighscores(&levelHighscores, attacker, true);
+            if (targ->monsterinfo.skill < 8)
+                attacker->client->pers.skills.stats[GIEX_STAT_LOW_MONSTER_KILLS]++;
+            else if (targ->monsterinfo.skill < 16)
+                attacker->client->pers.skills.stats[GIEX_STAT_MED_MONSTER_KILLS]++;
+            else if (targ->monsterinfo.skill < 24)
+                attacker->client->pers.skills.stats[GIEX_STAT_HI_MONSTER_KILLS]++;
+            else
+                attacker->client->pers.skills.stats[GIEX_STAT_VHI_MONSTER_KILLS]++;
+        }
+        else // Monster got killed by another monster or the world
+        {
+        }
+
+        // Do these things whenever a monster dies for any reason
+        targ->touch = NULL;
+        monster_death_use(targ);
+        targ->svflags |= SVF_DEADMONSTER;
+        level.killed_monsters++; // The game uses this to know when to spawn new monsters!!
+
+        // Medics won't heal monsters that they kill themselves
+        if (attacker->classid == CI_M_MEDIC)
+            targ->owner = attacker;
+
+        // Create item/powerup drops
+        if ((targ->classid != CI_CORPSESPORE) && (targ->classid != CI_GIBRAIN) && (targ->classid != CI_PIZZAGIB) && (targ->classid, CI_M_INSANE))
+        {
+            if ((game.monsterhunt == 10) && (targ->classid != CI_M_JORG)) // Drop lots of items when boss dies!!
+            {
+                for (int i = 0; i < 8; ++i)
+                {
+                    spawnItem(targ, attacker);
+                    spawnPowerup(targ, attacker);
+                }
+            }
+            else
+            {
+                spawnItem(targ, attacker);
+                spawnPowerup(targ, attacker);
+            }
+        }
+    }
+    else // Something in the world got destroyed
+    {
+    }
+
+    targ->die(targ, inflictor, attacker, damage, point);
+
+
+// Grape: below is the old code for this function before it was rewritten
+#if 0
 	if (!(targ->svflags & SVF_MONSTER) || (attacker->client))
 		targ->enemy = attacker;
 
+    // A monster got killed
 	if ((targ->svflags & SVF_MONSTER) && (targ->deadflag != DEAD_DEAD)) {
 		if (targ->monsterinfo.ability & GIEX_MABILITY_STEALTH) {
 			removeStealth();
@@ -100,16 +195,20 @@ void Killed (edict_t *targ, edict_t *inflictor, edict_t *attacker, int damage, v
 		}
 	}
 
+    // Something in the world
 	if (targ->movetype == MOVETYPE_PUSH || targ->movetype == MOVETYPE_STOP || targ->movetype == MOVETYPE_NONE)
 	{	// doors, triggers, etc
 		targ->die (targ, inflictor, attacker, damage, point);
 		return;
 	}
 
+    // A monster got killed
 	if ((targ->svflags & SVF_MONSTER) && (targ->deadflag != DEAD_DEAD)) {
 		targ->touch = NULL;
 		monster_death_use (targ);
 	}
+
+    // Poorly constructed logic here
 	if ((targ->classid != CI_CORPSESPORE) && (targ->classid != CI_GIBRAIN) && (targ->classid != CI_PIZZAGIB) && (targ->classid, CI_M_INSANE) && (targ->deadflag != DEAD_DEAD)) { // Insane should never spawn ammo or powerups
 //		gi.dprintf("Calling ammo and powerup spawn for %s\n", targ->classname);
 
@@ -168,6 +267,8 @@ void Killed (edict_t *targ, edict_t *inflictor, edict_t *attacker, int damage, v
 	}
 
 	targ->die (targ, inflictor, attacker, damage, point);
+#endif
+
 }
 
 
@@ -530,6 +631,30 @@ qboolean CheckTeamDamage (edict_t *targ, edict_t *attacker) {
 	return false;
 }
 
+/*
+============
+T_Damage
+
+targ		entity that is being damaged
+inflictor	entity that is causing the damage
+attacker	entity that caused the inflictor to damage targ
+example: targ=monster, inflictor=rocket, attacker=player
+
+dir			direction of the attack
+point		point at which the damage is being inflicted
+normal		normal vector from that point
+damage		amount of damage being inflicted
+knockback	force to be applied against targ as a result of the damage
+
+dflags		these flags are used to control how T_Damage works
+DAMAGE_RADIUS			damage was indirect (from a nearby explosion)
+DAMAGE_NO_ARMOR			armor does not protect from this damage
+DAMAGE_ENERGY			damage is from an energy based weapon
+DAMAGE_NO_KNOCKBACK		do not affect velocity, just view angles
+DAMAGE_BULLET			damage is from a bullet (used for ricochets)
+DAMAGE_NO_PROTECTION	kills godmode, armor, everything
+============
+*/
 int T_Damage (edict_t *targ, edict_t *inflictor, edict_t *attacker, vec3_t dir, vec3_t point, vec3_t normal, int damage, int knockback, int dflags, int mod) {
 	qboolean mod_magic = false;
 	gclient_t	*client;

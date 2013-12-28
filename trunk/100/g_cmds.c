@@ -2183,9 +2183,12 @@ void ClientCommand (edict_t *ent)
 		Cmd_activePowerup(ent);
 	else if (Q_strcasecmp(cmd, "combine") == 0)
 		Cmd_combinePowerups(ent);*/
-	else if (Q_strcasecmp(cmd, "skills") == 0)
-		Cmd_listSkills(ent);
-
+    else if (Q_strcasecmp(cmd, "skills") == 0)
+        Cmd_listSkills(ent);
+    else if (Q_strcasecmp(cmd, "allstats") == 0)
+        GiexPrintAllStats(ent);
+    else if (Q_strcasecmp(cmd, "highscores") == 0)
+        GiexPrintHighscores(ent, &levelHighscores);
 	else if (Q_strcasecmp(cmd, "giexhelp") == 0) {
 		if (ent->client->showmenu > 0) {
 			closeGiexMenu(ent);
@@ -2307,4 +2310,104 @@ void ClientCommand (edict_t *ent)
 
 	else
 		gi.cprintf (ent, PRINT_HIGH, "Unknown client command: %s\n", cmd);
+}
+
+
+// Grape
+// This will print out all stats (levels, exp, kills, deaths, skills) to the console
+//
+void GiexPrintAllStats(edict_t* ent)
+{
+    if (!ent->client || !ent->client->pers.loggedin)
+        return;
+
+    gi.cprintf(ent, PRINT_HIGH, "\n");
+    gi.cprintf(ent, PRINT_HIGH, "==============================\n");
+    gi.cprintf(ent, PRINT_HIGH, "Giex Character Stats\n");
+    gi.cprintf(ent, PRINT_HIGH, "\n");
+
+
+    for (int i = 0; i < GIEX_NUMCLASSES; ++i)
+    {
+        classinfo_t* globalClassInfo = getClassInfo(i);
+        if (strncmp(globalClassInfo->name, "", sizeof(globalClassInfo->name)) != 0)
+        {
+            gi.cprintf(ent, PRINT_HIGH, "%s\n", globalClassInfo->name);
+            gi.cprintf(ent, PRINT_HIGH, "Exp: %d, Level: %d\n", ent->client->pers.skills.classExp[i], ent->client->pers.skills.classLevel[i]);
+            gi.cprintf(ent, PRINT_HIGH, "\n");
+        }
+    }
+
+
+    gi.cprintf(ent, PRINT_HIGH, "Current Skills\n");
+    gi.cprintf(ent, PRINT_HIGH, "\n");
+    for (int i = 0; i < GIEX_PUTYPES; ++i)
+    {
+        int playerPowerupLevel = ent->client->pers.skill[i];
+        if (playerPowerupLevel > 0)
+        {
+            powerupinfo_t* globalPowerupInfo = getPowerupInfo(i);
+
+            // General Skills
+            if (globalPowerupInfo->isspell == 0)
+                gi.cprintf(ent, PRINT_HIGH, "%s: %d\n", globalPowerupInfo->name, playerPowerupLevel);
+        }
+    }
+    gi.cprintf(ent, PRINT_HIGH, "\n");
+    for (int i = 0; i < GIEX_PUTYPES; ++i)
+    {
+        int playerPowerupLevel = ent->client->pers.skill[i];
+        if (playerPowerupLevel > 0)
+        {
+            powerupinfo_t* globalPowerupInfo = getPowerupInfo(i);
+
+            // Spells
+            if (globalPowerupInfo->isspell > 0)
+                gi.cprintf(ent, PRINT_HIGH, "%s: %d\n", globalPowerupInfo->name, playerPowerupLevel);
+        }
+    }
+    gi.cprintf(ent, PRINT_HIGH, "\n");
+
+
+    int playerSumMonsterKills = 0;
+    playerSumMonsterKills += ent->client->pers.skills.stats[GIEX_STAT_LOW_MONSTER_KILLS];
+    playerSumMonsterKills += ent->client->pers.skills.stats[GIEX_STAT_MED_MONSTER_KILLS];
+    playerSumMonsterKills += ent->client->pers.skills.stats[GIEX_STAT_HI_MONSTER_KILLS];
+    playerSumMonsterKills += ent->client->pers.skills.stats[GIEX_STAT_VHI_MONSTER_KILLS];
+    int playerSumPlayerDeaths = 0;
+    playerSumPlayerDeaths += ent->client->pers.skills.stats[GIEX_STAT_LOWER_PLAYER_DEATHS];
+    playerSumPlayerDeaths += ent->client->pers.skills.stats[GIEX_STAT_HIGHER_PLAYER_DEATHS];
+    int playerSumPlayerKills = 0;
+    playerSumPlayerKills += ent->client->pers.skills.stats[GIEX_STAT_LOWER_PLAYER_KILLS];
+    playerSumPlayerKills += ent->client->pers.skills.stats[GIEX_STAT_HIGHER_PLAYER_KILLS];
+
+    gi.cprintf(ent, PRINT_HIGH, "Statistics\n");
+    gi.cprintf(ent, PRINT_HIGH, "\n");
+    gi.cprintf(ent, PRINT_HIGH, "Total monster kills: %d\n", playerSumMonsterKills);
+    gi.cprintf(ent, PRINT_HIGH, "Deaths from monsters: %d\n", ent->client->pers.skills.stats[GIEX_STAT_MONSTER_DEATHS]);
+    gi.cprintf(ent, PRINT_HIGH, "Suicides: %d\n", ent->client->pers.skills.stats[GIEX_STAT_OTHER_DEATHS]);
+    gi.cprintf(ent, PRINT_HIGH, "\n");
+    gi.cprintf(ent, PRINT_HIGH, "Player kills: %d\n", playerSumPlayerKills);
+    gi.cprintf(ent, PRINT_HIGH, "Deaths from players: %d\n", playerSumPlayerDeaths);
+
+
+    gi.cprintf(ent, PRINT_HIGH, "\n");
+}
+
+void GiexPrintHighscores(edict_t* ent, level_highscores_t* scores)
+{
+    gi.cprintf(ent, PRINT_HIGH, "==============================\n");
+    gi.cprintf(ent, PRINT_HIGH, "Current Highscores\n");
+    gi.cprintf(ent, PRINT_HIGH, "\n");
+
+    // For now, unsorted version
+    for (int i = 0; i < scores->playerListSize; ++i)
+    {
+        char* playerName = scores->playerList[i].playerName;
+        int monsterKills = scores->playerList[i].totalMonsterKills;
+        int playerKills = scores->playerList[i].totalPlayerKills;
+
+        gi.cprintf(ent, PRINT_HIGH, "%s, monster kills: %d, player kills: %d\n", playerName, monsterKills, playerKills);
+    }
+    gi.cprintf(ent, PRINT_HIGH, "\n");
 }

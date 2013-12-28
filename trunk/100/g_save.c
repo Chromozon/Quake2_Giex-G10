@@ -160,9 +160,9 @@ void InitGame (void)
 	teams = gi.cvar ("teams", "0", CVAR_LATCH);
 	teamdamage = gi.cvar ("teamdamage", "0", 0);
 	idletimeout = gi.cvar ("idletimeout", "10", CVAR_LATCH);
-	charpath = gi.cvar ("charpath", "./giex/charsave", CVAR_LATCH);
-	mapspath = gi.cvar ("mapspath", "./giex/maplist.ini", CVAR_LATCH);
-	cdpspath = gi.cvar ("cdpspath", "./giex/cdps", CVAR_LATCH);
+	charpath = gi.cvar ("charpath", "./giexg10/charsave", CVAR_LATCH);
+	mapspath = gi.cvar ("mapspath", "./giexg10/maplist.ini", CVAR_LATCH);
+	cdpspath = gi.cvar ("cdpspath", "./giexg10/cdps", CVAR_LATCH);
 	skill = gi.cvar ("skill", "1", 0);
 	autoskill = gi.cvar ("autoskill", "1", 0);
 	baseskill = gi.cvar ("baseskill", "1.0", 0);

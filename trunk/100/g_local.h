@@ -84,9 +84,9 @@
 #define GIEX_ITEM_MAGE 2048
 #define GIEX_ITEM_VAMPIRE 4096
 
-#define GIEX_PUPERCHAR 20 // Max powerups plugged in per character
-#define GIEX_PUCARRYPERCHAR 50 // Max powerups carriable per character
-#define GIEX_ITEMPERCHAR 100 // Max items per character
+#define GIEX_PUPERCHAR 100 // Max powerups plugged in per character
+#define GIEX_PUCARRYPERCHAR 100 // Max powerups carriable per character
+#define GIEX_ITEMPERCHAR 200 // Max items per character
 #define GIEX_ENCHPERITEM 10 // Max enchantments per item
 
 #define GIEX_AUTOPERITEM 5 // Max automatic powerups for item
@@ -274,6 +274,21 @@ typedef struct gitem_s {
 	char		*precaches;		// string of all models, sounds, and images this item will use
 } gitem_t;
 
+
+// These two structs are used to keep track of highscores for each map
+// level_highscores_t is cleared at the end of each map in g_main.c, EndDMLevel()
+typedef struct {
+    char playerName[16];
+    int playerLevel;
+    time_t timestamp;
+    int totalMonsterKills;
+    int totalPlayerKills;
+} player_level_stats_t;
+
+typedef struct {
+    player_level_stats_t playerList[20];
+    int playerListSize; // current actively used spots in playerList
+} level_highscores_t;
 
 
 //
@@ -528,6 +543,7 @@ extern	level_locals_t	level;
 extern	game_import_t	gi;
 extern	game_export_t	globals;
 extern	spawn_temp_t	st;
+extern  level_highscores_t levelHighscores;
 
 extern	int	sm_meat_index;
 extern	int	snd_fry;
@@ -730,6 +746,8 @@ extern	gitem_t	itemlist[];
 void Cmd_Help_f (edict_t *ent);
 void Cmd_Score_f (edict_t *ent);
 void pluginPowerup(edict_t *ent, int pu, int item);
+void GiexPrintAllStats(edict_t* ent);
+void GiexPrintHighscores(edict_t* ent, level_highscores_t* scores);
 
 //
 // g_items.c
@@ -1001,6 +1019,8 @@ void G_RunEntity (edict_t *ent);
 void SaveClientData (void);
 void FetchClientEntData (edict_t *ent);
 void logmsg(char *message);
+void GiexClearHighscores(level_highscores_t* scores);
+void GiexUpdateHighscores(level_highscores_t* scores, edict_t* ent, qboolean monsterKill);
 
 //
 // g_chase.c
@@ -1017,6 +1037,9 @@ void hashPassword(const char *pw, char *digestWithNullTerm);
 int newCharacter(edict_t *ent, int classId, char *password);
 int loadCharacter(edict_t *ent, char *password);
 void saveCharacter(edict_t *ent);
+void GiexSaveMapHighscores(level_highscores_t* scores);
+void GiexGetSavedLevelHighscores(const char* mapname, level_highscores_t* outScores);
+void GiexWriteLevelHighscoresToFile(const char* mapname, const level_highscores_t* scores);
 
 //
 // g_magic.c

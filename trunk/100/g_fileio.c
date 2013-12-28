@@ -465,3 +465,105 @@ void saveCharacter(edict_t *ent)
 	fwrite(ent->client->pers.inventory, sizeof(ent->client->pers.inventory), 1, file);
 	fclose(file);
 }
+
+
+
+// Reads a mapname.sco file and fills the outScores struct with the file data
+// Guarentees: does not modify mapname
+//
+void GiexGetSavedLevelHighscores(char* mapname, level_highscores_t* outScores)
+{
+    FILE *file = NULL;
+    char path[128];
+    sprintf(path, "%s/%s.sco", charpath->string, mapname);
+    file = fopen(path, "r");
+
+    // Return early if the file does not exist (or some other error in opening)
+    outScores->playerListSize = 0;
+    if (file == NULL)
+        return;
+
+    // A quick test to see if the highscores file is empty for some reason
+    fseek(file, 0, SEEK_SET);
+    fgetc(file);
+    if (feof(file))
+    {
+        fclose(file);
+        return;
+    }
+
+    // Now we know our file is not empty, so read all of the rows into the struct
+    fseek(file, 0, SEEK_SET);
+    int i = 0;
+    while (1)
+    {
+        fscanf_s(file, "%s", outScores->playerList[i].playerName);
+        fscanf_s(file, "%d", &outScores->playerList[i].playerLevel);
+        fscanf_s(file, "%ld", &outScores->playerList[i].timestamp);
+        fscanf_s(file, "%d", &outScores->playerList[i].totalMonsterKills);
+        fscanf_s(file, "%d", &outScores->playerList[i].totalPlayerKills);
+        outScores->playerListSize++;
+        i++;
+
+        if (feof(file) || i >= 10)
+            break;
+    }
+    fclose(file);
+}
+
+
+// Writes up to the first 10 entries in the scores struct to a mapname.sco file
+// We assume that scores is sorted by totalMonsterKills (row 0 is highest number of kills)
+// Guarentees: does not modify mapname and scores
+//
+void GiexWriteLevelHighscoresToFile(char* mapname, level_highscores_t* scores)
+{
+    FILE *file = NULL;
+    char path[128];
+
+    // If someone creates a map called giexg10highscores, don't overwrite our overall highscores file
+    if (strncmp(mapname, "giexg10highscores", 17) == 0)
+        return;
+
+    sprintf(path, "%s/%s.sco", charpath->string, level.mapname);
+    file = fopen(path, "w"); // creates file if necessary, and clears file
+
+    if (file == NULL)
+        return;
+
+    // Format of the highscores file is as follows:
+    // Line 1: playername TAB playerlevel TAB date TAB monsterkills TAB playerkills
+    // ...
+    // Line 10: playername TAB playerlevel TAB date TAB monsterkills TAB playerkills
+    fseek(file, 0, SEEK_SET);
+    int count = scores->playerListSize;
+    if (count > 10)
+        count = 10;
+    for (int i = 0; i < count; ++i)
+    {
+        fprintf_s(file, "%s\t", scores->playerList[i].playerName);
+        fprintf_s(file, "%d\t", scores->playerList[i].playerLevel);
+        fprintf_s(file, "%ld\t", scores->playerList[i].timestamp);
+        fprintf_s(file, "%d\t", scores->playerList[i].totalMonsterKills);
+        fprintf_s(file, "%d\n", scores->playerList[i].totalPlayerKills);
+    }
+    fclose(file);
+}
+
+// Given two highscores lists s1 and s2, merges them together and creates a sorted outScores list (row 0 is highest monsterkills)
+// The input lists can each hold 20 entries, and the output can only hold 20 entries
+// So it is possible that some values will not make it to the top 20 of the outScores list
+// This is the current desired behavior because we only care about the top 10
+// Guarentees: does not modify s1 and s2
+//
+void GiexMergeHighscores(level_highscores_t* s1, level_highscores_t* s2, level_highscores_t* outScores)
+{
+    // Algorithm:
+    // Step 1: Traverse both s1 and s2, find the largest monster kills
+    // Step 2: Copy that entry into outScores
+    // Step 3: Mark the entry in s1/s2 used
+    // Step 4: Goto step 1 and repeat until outScores is full or all of s1/s2 used
+
+
+
+}
