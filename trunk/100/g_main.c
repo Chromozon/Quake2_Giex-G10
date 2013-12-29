@@ -7,6 +7,7 @@ game_import_t	gi;
 game_export_t	globals;
 spawn_temp_t	st;
 level_highscores_t levelHighscores;
+level_highscores_t savedHighscoresForCurrentMap;
 
 int	sm_meat_index;
 int	snd_fry;
@@ -23,6 +24,7 @@ cvar_t	*idletimeout;
 cvar_t	*charpath;
 cvar_t	*mapspath;
 cvar_t	*cdpspath;
+cvar_t  *scorespath;
 cvar_t	*dmflags;
 cvar_t	*skill;
 cvar_t	*autoskill;
@@ -265,7 +267,25 @@ void EndDMLevel (void)
 	char *s, *t, *f;
 	static const char *seps = " ,\n\r";
 
-    GiexClearHighscores(&levelHighscores);
+    // At the end of each map, we want to update the mapname.sco highscores file
+    level_highscores_t savedScores;
+    level_highscores_t mergedScores;
+    if (game.craze != 10) // we don't save highscores if craze
+    {
+        GiexGetSavedLevelHighscores(level.mapname, &savedScores);
+        GiexMergeHighscores(&savedScores, &levelHighscores, &mergedScores);
+        GiexWriteLevelHighscoresToFile(level.mapname, &mergedScores);
+    }
+    GiexClearHighscoresStruct(&levelHighscores);
+    GiexClearHighscoresStruct(&savedHighscoresForCurrentMap);
+
+    // Update the highscores cache for the next map
+    if (deathmatch->value)
+    {
+        char* mapname = getNextMap(level.mapname);
+        GiexGetSavedLevelHighscores(mapname, &savedHighscoresForCurrentMap);
+    }
+
 
 	// stay on same level flag
 /*	if ((int)dmflags->value & DF_SAME_LEVEL) {
@@ -707,12 +727,18 @@ void logmsg(char *message) {
 
 
 
-void GiexClearHighscores(level_highscores_t* scores)
+void GiexClearHighscoresStruct(level_highscores_t* scores)
 {
     scores->playerListSize = 0;
 }
 
-void GiexUpdateHighscores(level_highscores_t* scores, edict_t* ent, qboolean monsterKill)
+
+// Given an ent (a player) and a scores struct, increases either the monster kills or player kills
+// If the player is not in the struct, it adds them to it
+// The timestamp and current player level also gets updated
+// Guarentees: does not modify ent
+//
+void GiexUpdateHighscoreEntry(level_highscores_t* scores, edict_t* ent, qboolean monsterKill)
 {
     qboolean playerAlreadyInList = false;
     int i = 0;
@@ -732,13 +758,13 @@ void GiexUpdateHighscores(level_highscores_t* scores, edict_t* ent, qboolean mon
     {
         if (scores->playerListSize < 20)
         {
-            strncpy(scores->playerList[i].playerName, ent->client->pers.netname, strnlen_s(ent->client->pers.netname, 16));
+            strncpy(scores->playerList[i].playerName, ent->client->pers.netname, 16);
             scores->playerList[i].totalMonsterKills = 0;
             scores->playerList[i].totalPlayerKills = 0;
             scores->playerListSize++;
         }
         else
-            return; // have to return early if we don't have room so as to not override other values in the table
+            return; // have to return early if we don't have room so as to not execute the code below this
     }
 
     // Finally, update the entry

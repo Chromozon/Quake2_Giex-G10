@@ -163,6 +163,7 @@ void InitGame (void)
 	charpath = gi.cvar ("charpath", "./giexg10/charsave", CVAR_LATCH);
 	mapspath = gi.cvar ("mapspath", "./giexg10/maplist.ini", CVAR_LATCH);
 	cdpspath = gi.cvar ("cdpspath", "./giexg10/cdps", CVAR_LATCH);
+    scorespath = gi.cvar("scorespath", "./giexg10/highscores", CVAR_LATCH);
 	skill = gi.cvar ("skill", "1", 0);
 	autoskill = gi.cvar ("autoskill", "1", 0);
 	baseskill = gi.cvar ("baseskill", "1.0", 0);
@@ -193,6 +194,9 @@ void InitGame (void)
 
 	// dm map list
 	sv_maplist = gi.cvar ("sv_maplist", "", 0);
+
+    // We assume we are only running a DM server, so load the highscores for the first map
+    GiexGetSavedLevelHighscores("q2dm1", &savedHighscoresForCurrentMap);
 
 	//r1: added
 	ipbans = gi.cvar ("ipbans", "giex/banlist", CVAR_NOSET);

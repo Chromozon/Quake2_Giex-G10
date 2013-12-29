@@ -1643,6 +1643,9 @@ void showGiexMenu(edict_t *ent) {
 		case 13:
 			showGiexStats(ent);
 			break;
+        case 14:
+            GiexDisplayHighscoresMenuHUD(ent, &savedHighscoresForCurrentMap);
+            break;
 		default:
 			break;
 	}
@@ -1856,6 +1859,7 @@ void selectMenuChoice(edict_t *ent) {
 		return;
 	}
 }
+
 void selectNextMenu(edict_t *ent) {
 	if (level.time < ent->client->menu_delay_time) {
 		return;
@@ -2024,4 +2028,77 @@ void closeGiexMenu(edict_t *ent) {
 	ent->client->menuchoice[2] = 0;
 	ent->client->menuchoice[3] = 0;
 	ent->client->menuchoice[4] = 0;
+}
+
+
+void GiexDisplayHighscoresMenuHUD(edict_t* ent, level_highscores_t* scores)
+{
+    char combuf[1024] = "";
+    char fullString[4096] = "";
+
+    // x, y = 0, 0 is somewhere in top left region of screen
+    // Seems that it's best to increase x by units of 8, y by units of 10
+    int startX = -64;
+    int startY = 0;
+    int col0X = startX;             // numbers 1-10
+    int col1X = col0X + (2 * 8);    // player name
+    int col2X = col1X + (16 * 8);   // player level
+    int col3X = col2X + (6 * 8);    // monster kills
+    int col4X = col3X + (7 * 8);    // player kills
+    int col5x = col4X + (7 * 8);    // date
+
+    Com_sprintf(combuf, sizeof(combuf),
+        "xv %d yv %d string2 \"Player\" "
+        "xv %d yv %d string2 \"Level\" "
+        "xv %d yv %d string2 \"MKills\" "
+        "xv %d yv %d string2 \"PKills\" "
+        "xv %d yv %d string2 \"Date\" "
+        "xv %d yv %d string2 \"----------------------------------------------\" ",
+        col1X, startY,
+        col2X, startY,
+        col3X, startY,
+        col4X, startY,
+        col5x, startY,
+        col1X, startY + 10);
+    strcat(fullString, combuf);
+
+    // Now we fill in the top 10 on the scoreboard
+    // Empty entries are blank
+    for (int i = 0; i < 10; ++i)
+    {
+        if (i < scores->playerListSize) // There is an entry in our highscores list for this position
+        {
+            time_t timestamp = scores->playerList[i].timestamp;
+            struct tm* timeinfo = gmtime(&timestamp);
+            char formattedTime[11];
+            strftime(formattedTime, sizeof(formattedTime), "%m/%d/%Y", timeinfo);
+
+            Com_sprintf(combuf, sizeof(combuf),
+                "xv %d yv %d string2 \"%d.\" "
+                "xv %d yv %d string2 \"%s\" "
+                "xv %d yv %d string2 \"%d\" "
+                "xv %d yv %d string2 \"%d\" "
+                "xv %d yv %d string2 \"%d\" "
+                "xv %d yv %d string2 \"%s\" ",
+                col0X, startY + ((2 + i) * 10), i,
+                col1X, startY + ((2 + i) * 10), scores->playerList[i].playerName,
+                col2X, startY + ((2 + i) * 10), scores->playerList[i].playerLevel,
+                col3X, startY + ((2 + i) * 10), scores->playerList[i].totalMonsterKills,
+                col4X, startY + ((2 + i) * 10), scores->playerList[i].totalPlayerKills,
+                col5x, startY + ((2 + i) * 10), formattedTime);
+            strcat(fullString, combuf);
+        }
+        else
+        {
+            // Blank entry
+            Com_sprintf(combuf, sizeof(combuf),
+                "xv %d yv %d string2 \"%d.\" ",
+                col0X, startY + ((2 + i) * 10), i);
+            strcat(fullString, combuf);
+        }
+    }
+
+    gi.WriteByte(svc_layout);
+    gi.WriteString(fullString);
+    gi.unicast(ent, true);
 }

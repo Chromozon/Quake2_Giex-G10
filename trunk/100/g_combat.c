@@ -95,13 +95,13 @@ void Killed (edict_t* targ, edict_t* inflictor, edict_t* attacker, int damage, v
             {
                 targ->client->pers.skills.stats[GIEX_STAT_LOWER_PLAYER_DEATHS]++;
                 attacker->client->pers.skills.stats[GIEX_STAT_HIGHER_PLAYER_KILLS]++;
-                GiexUpdateHighscores(&levelHighscores, attacker, false);
+                GiexUpdateHighscoreEntry(&levelHighscores, attacker, false);
             }
             else // Killed by higher level player
             {
                 targ->client->pers.skills.stats[GIEX_STAT_HIGHER_PLAYER_DEATHS]++;
                 attacker->client->pers.skills.stats[GIEX_STAT_LOWER_PLAYER_KILLS]++;
-                GiexUpdateHighscores(&levelHighscores, attacker, false);
+                GiexUpdateHighscoreEntry(&levelHighscores, attacker, false);
             }
         }
         else // Player got killed by monster or world
@@ -120,7 +120,7 @@ void Killed (edict_t* targ, edict_t* inflictor, edict_t* attacker, int damage, v
     {
         if (attacker->client) // Monster got killed by player
         {
-            GiexUpdateHighscores(&levelHighscores, attacker, true);
+            GiexUpdateHighscoreEntry(&levelHighscores, attacker, true);
             if (targ->monsterinfo.skill < 8)
                 attacker->client->pers.skills.stats[GIEX_STAT_LOW_MONSTER_KILLS]++;
             else if (targ->monsterinfo.skill < 16)

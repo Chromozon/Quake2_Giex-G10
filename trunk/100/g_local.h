@@ -543,7 +543,8 @@ extern	level_locals_t	level;
 extern	game_import_t	gi;
 extern	game_export_t	globals;
 extern	spawn_temp_t	st;
-extern  level_highscores_t levelHighscores;
+extern  level_highscores_t levelHighscores; // this get cleared at the end of each map
+extern  level_highscores_t savedHighscoresForCurrentMap; // these are the highscores currently saved on file for the current map; refreshed on map change
 
 extern	int	sm_meat_index;
 extern	int	snd_fry;
@@ -654,6 +655,7 @@ extern	cvar_t	*idletimeout;
 extern	cvar_t	*charpath;
 extern	cvar_t	*mapspath;
 extern	cvar_t	*cdpspath;
+extern  cvar_t  *scorespath;
 extern	cvar_t	*dmflags;
 extern	cvar_t	*skill;
 extern	cvar_t	*autoskill;
@@ -994,6 +996,7 @@ void showGiexCommandsMenu(edict_t *ent);
 void showGiexClassesMenu(edict_t *ent);
 void showEnterNewPwdMenu(edict_t *ent);
 void closeGiexMenu(edict_t *ent);
+void GiexDisplayHighscoresMenuHUD(edict_t* ent, level_highscores_t* scores);
 
 //
 // g_pweapon.c
@@ -1019,8 +1022,8 @@ void G_RunEntity (edict_t *ent);
 void SaveClientData (void);
 void FetchClientEntData (edict_t *ent);
 void logmsg(char *message);
-void GiexClearHighscores(level_highscores_t* scores);
-void GiexUpdateHighscores(level_highscores_t* scores, edict_t* ent, qboolean monsterKill);
+void GiexClearHighscoresStruct(level_highscores_t* scores);
+void GiexUpdateHighscoreEntry(level_highscores_t* scores, edict_t* ent, qboolean monsterKill);
 
 //
 // g_chase.c
@@ -1037,9 +1040,9 @@ void hashPassword(const char *pw, char *digestWithNullTerm);
 int newCharacter(edict_t *ent, int classId, char *password);
 int loadCharacter(edict_t *ent, char *password);
 void saveCharacter(edict_t *ent);
-void GiexSaveMapHighscores(level_highscores_t* scores);
-void GiexGetSavedLevelHighscores(const char* mapname, level_highscores_t* outScores);
-void GiexWriteLevelHighscoresToFile(const char* mapname, const level_highscores_t* scores);
+void GiexGetSavedLevelHighscores(char* mapname, level_highscores_t* outScores);
+void GiexWriteLevelHighscoresToFile(char* mapname, level_highscores_t* scores);
+void GiexMergeHighscores(level_highscores_t* s1, level_highscores_t* s2, level_highscores_t* outScores);
 
 //
 // g_magic.c

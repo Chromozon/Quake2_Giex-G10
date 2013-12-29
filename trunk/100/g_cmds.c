@@ -2187,8 +2187,20 @@ void ClientCommand (edict_t *ent)
         Cmd_listSkills(ent);
     else if (Q_strcasecmp(cmd, "allstats") == 0)
         GiexPrintAllStats(ent);
-    else if (Q_strcasecmp(cmd, "highscores") == 0)
+    else if (Q_strcasecmp(cmd, "currenthighscores") == 0)
         GiexPrintHighscores(ent, &levelHighscores);
+    else if (Q_strcasecmp(cmd, "highscores") == 0)
+    {
+        if (ent->client->showmenu > 0)
+            closeGiexMenu(ent);
+        else
+        {
+            closeGiexMenu(ent);
+            ent->client->showscores = true;
+            ent->client->showmenu = 14;
+            showGiexMenu(ent);
+        }
+    }
 	else if (Q_strcasecmp(cmd, "giexhelp") == 0) {
 		if (ent->client->showmenu > 0) {
 			closeGiexMenu(ent);

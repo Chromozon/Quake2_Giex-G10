@@ -468,14 +468,14 @@ void saveCharacter(edict_t *ent)
 
 
 
-// Reads a mapname.sco file and fills the outScores struct with the file data
+// Reads a mapname.sco file and fills the outScores struct with the file data (max 10 entries in the list)
 // Guarentees: does not modify mapname
 //
 void GiexGetSavedLevelHighscores(char* mapname, level_highscores_t* outScores)
 {
     FILE *file = NULL;
     char path[128];
-    sprintf(path, "%s/%s.sco", charpath->string, mapname);
+    sprintf(path, "%s/%s.sco", scorespath->string, mapname);
     file = fopen(path, "r");
 
     // Return early if the file does not exist (or some other error in opening)
@@ -497,11 +497,11 @@ void GiexGetSavedLevelHighscores(char* mapname, level_highscores_t* outScores)
     int i = 0;
     while (1)
     {
-        fscanf_s(file, "%s", outScores->playerList[i].playerName);
-        fscanf_s(file, "%d", &outScores->playerList[i].playerLevel);
-        fscanf_s(file, "%ld", &outScores->playerList[i].timestamp);
-        fscanf_s(file, "%d", &outScores->playerList[i].totalMonsterKills);
-        fscanf_s(file, "%d", &outScores->playerList[i].totalPlayerKills);
+        fscanf(file, "%s", outScores->playerList[i].playerName);
+        fscanf(file, "%d", &outScores->playerList[i].playerLevel);
+        fscanf(file, "%lld", &outScores->playerList[i].timestamp);
+        fscanf(file, "%d", &outScores->playerList[i].totalMonsterKills);
+        fscanf(file, "%d", &outScores->playerList[i].totalPlayerKills);
         outScores->playerListSize++;
         i++;
 
@@ -525,7 +525,7 @@ void GiexWriteLevelHighscoresToFile(char* mapname, level_highscores_t* scores)
     if (strncmp(mapname, "giexg10highscores", 17) == 0)
         return;
 
-    sprintf(path, "%s/%s.sco", charpath->string, level.mapname);
+    sprintf(path, "%s/%s.sco", scorespath->string, level.mapname);
     file = fopen(path, "w"); // creates file if necessary, and clears file
 
     if (file == NULL)
@@ -541,29 +541,101 @@ void GiexWriteLevelHighscoresToFile(char* mapname, level_highscores_t* scores)
         count = 10;
     for (int i = 0; i < count; ++i)
     {
-        fprintf_s(file, "%s\t", scores->playerList[i].playerName);
-        fprintf_s(file, "%d\t", scores->playerList[i].playerLevel);
-        fprintf_s(file, "%ld\t", scores->playerList[i].timestamp);
-        fprintf_s(file, "%d\t", scores->playerList[i].totalMonsterKills);
-        fprintf_s(file, "%d\n", scores->playerList[i].totalPlayerKills);
+        fprintf(file, "%s\t", scores->playerList[i].playerName);
+        fprintf(file, "%d\t", scores->playerList[i].playerLevel);
+        fprintf(file, "%lld\t", scores->playerList[i].timestamp);
+        fprintf(file, "%d\t", scores->playerList[i].totalMonsterKills);
+        fprintf(file, "%d", scores->playerList[i].totalPlayerKills);
+        if (i + 1 < count)
+            fprintf(file, "\n"); // only write a newline if we are not the last entry
     }
     fclose(file);
 }
 
+
 // Given two highscores lists s1 and s2, merges them together and creates a sorted outScores list (row 0 is highest monsterkills)
 // The input lists can each hold 20 entries, and the output can only hold 20 entries
 // So it is possible that some values will not make it to the top 20 of the outScores list
-// This is the current desired behavior because we only care about the top 10
+// This is the current desired behavior because we only care about the top 10 really
 // Guarentees: does not modify s1 and s2
 //
 void GiexMergeHighscores(level_highscores_t* s1, level_highscores_t* s2, level_highscores_t* outScores)
 {
+    outScores->playerListSize = 0;
+
     // Algorithm:
     // Step 1: Traverse both s1 and s2, find the largest monster kills
     // Step 2: Copy that entry into outScores
     // Step 3: Mark the entry in s1/s2 used
     // Step 4: Goto step 1 and repeat until outScores is full or all of s1/s2 used
 
+    // The trick here is to combine S1 and S2 to make the search for the max really easy
+    int merged[40] = {-1};
+    for (int i = 0; i < s1->playerListSize; ++i)
+        merged[i] = s1->playerList[i].totalMonsterKills;
+    for (int i = 0; i < s2->playerListSize; ++i)
+        merged[i + 20] = s2->playerList[i].totalMonsterKills;
 
+    // Find max, copy entry, repeat till done
+    // If two values for max are the same, we want to compare by timestamps
+    while (1)
+    {
+        int maxNumber = -1;
+        int index = -1;
+        time_t timestamp = LLONG_MAX;
+        for (int i = 0; i < 40; ++i)
+        {
+            // Make sure the value is > 0 so that we only use valid entries
+            if (merged[i] > maxNumber && merged[i] > 0)
+            {
+                maxNumber = merged[i];
+                index = i;
+                if (i < 20)
+                    timestamp = s1->playerList[i].timestamp;
+                else
+                    timestamp = s2->playerList[i - 20].timestamp;
+            }
+            else if (merged[i] == maxNumber && merged[i] > 0) // If equal, favor the oldest
+            {
+                time_t compareTimestamp;
+                if (i < 20)
+                    compareTimestamp = s1->playerList[i].timestamp;
+                else
+                    compareTimestamp = s2->playerList[i - 20].timestamp;
 
+                if (compareTimestamp < timestamp)
+                {
+                    timestamp = compareTimestamp;
+                    index = i;
+                    maxNumber = merged[i];
+                }
+            }
+        } // end for loop
+
+        // If we didn't find a valid max number or do not have any output space, we are done
+        if (maxNumber <= 0 || index < 0 || outScores->playerListSize >= 20)
+            break;
+
+        // We have a valid max number, so update outScores, and mark as used
+        int saveI = outScores->playerListSize;
+        if (index < 20)
+        {
+            strncpy(outScores->playerList[saveI].playerName, s1->playerList[index].playerName, 16);
+            outScores->playerList[saveI].playerLevel = s1->playerList[index].playerLevel;
+            outScores->playerList[saveI].timestamp = s1->playerList[index].timestamp;
+            outScores->playerList[saveI].totalMonsterKills = s1->playerList[index].totalMonsterKills;
+            outScores->playerList[saveI].totalPlayerKills = s1->playerList[index].totalPlayerKills;
+        }
+        else
+        {
+            strncpy(outScores->playerList[saveI].playerName, s2->playerList[index - 20].playerName, 16);
+            outScores->playerList[saveI].playerLevel = s2->playerList[index - 20].playerLevel;
+            outScores->playerList[saveI].timestamp = s2->playerList[index - 20].timestamp;
+            outScores->playerList[saveI].totalMonsterKills = s2->playerList[index - 20].totalMonsterKills;
+            outScores->playerList[saveI].totalPlayerKills = s2->playerList[index - 20].totalPlayerKills;
+        }
+        outScores->playerListSize++;
+        merged[index] = -1; // marks item in list as used
+
+    } // end while loop
 }
