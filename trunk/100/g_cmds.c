@@ -1630,16 +1630,6 @@ void Cmd_Kill_f (edict_t *ent) {
 	meansOfDeath = MOD_SUICIDE;
 	player_die (ent, ent, ent, 100000, vec3_origin);
 
-	ent->client->pers.add_exp -= pow(ent->radius_dmg, 1.5) * 20;
-	if (ent->client->pers.add_exp > -1) {
-		return;
-	}
-
-//TODO: Spread out exp deduction over powerups as well?
-
-	ent->client->pers.skills.classExp[ent->client->pers.skills.activeClass] += (int) ent->client->pers.add_exp;
-	ent->client->pers.expRemain -= (int) ent->client->pers.add_exp;
-	ent->client->pers.add_exp -= (int) ent->client->pers.add_exp;
 }
 
 /*
@@ -2187,6 +2177,8 @@ void ClientCommand (edict_t *ent)
         Cmd_listSkills(ent);
     else if (Q_strcasecmp(cmd, "allstats") == 0)
         GiexPrintAllStats(ent);
+    else if (Q_strcasecmp(cmd, "spree") == 0)
+        GiexPrintSpree(ent);
     else if (Q_strcasecmp(cmd, "currenthighscores") == 0)
         GiexPrintHighscores(ent, &levelHighscores);
     else if (Q_strcasecmp(cmd, "highscores") == 0)
@@ -2422,4 +2414,12 @@ void GiexPrintHighscores(edict_t* ent, level_highscores_t* scores)
         gi.cprintf(ent, PRINT_HIGH, "%s, monster kills: %d, player kills: %d\n", playerName, monsterKills, playerKills);
     }
     gi.cprintf(ent, PRINT_HIGH, "\n");
+}
+
+void GiexPrintSpree(edict_t* ent)
+{
+    if (!ent->client || !ent->client->pers.loggedin)
+        return;
+
+    gi.cprintf(ent, PRINT_HIGH, "Current spree: %d, Best: %d\n", ent->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE], ent->client->pers.skills.stats[GIEX_STAT_BEST_SPREE]);
 }

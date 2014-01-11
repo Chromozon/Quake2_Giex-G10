@@ -2041,7 +2041,7 @@ void GiexDisplayHighscoresMenuHUD(edict_t* ent, level_highscores_t* scores)
     int startX = -64;
     int startY = 0;
     int col0X = startX;             // numbers 1-10
-    int col1X = col0X + (2 * 8);    // player name
+    int col1X = col0X + (3 * 8);    // player name
     int col2X = col1X + (16 * 8);   // player level
     int col3X = col2X + (6 * 8);    // monster kills
     int col4X = col3X + (7 * 8);    // player kills
@@ -2063,8 +2063,9 @@ void GiexDisplayHighscoresMenuHUD(edict_t* ent, level_highscores_t* scores)
     strcat(fullString, combuf);
 
     // Now we fill in the top 10 on the scoreboard
+    // TODO: More than 4 entries leads to overflow, FIXME
     // Empty entries are blank
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 4; ++i)
     {
         if (i < scores->playerListSize) // There is an entry in our highscores list for this position
         {
@@ -2075,12 +2076,12 @@ void GiexDisplayHighscoresMenuHUD(edict_t* ent, level_highscores_t* scores)
 
             Com_sprintf(combuf, sizeof(combuf),
                 "xv %d yv %d string2 \"%d.\" "
-                "xv %d yv %d string2 \"%s\" "
-                "xv %d yv %d string2 \"%d\" "
-                "xv %d yv %d string2 \"%d\" "
-                "xv %d yv %d string2 \"%d\" "
-                "xv %d yv %d string2 \"%s\" ",
-                col0X, startY + ((2 + i) * 10), i,
+                "xv %d yv %d string \"%s\" "
+                "xv %d yv %d string \"%d\" "
+                "xv %d yv %d string \"%d\" "
+                "xv %d yv %d string \"%d\" "
+                "xv %d yv %d string \"%s\" ",
+                col0X, startY + ((2 + i) * 10), i + 1,
                 col1X, startY + ((2 + i) * 10), scores->playerList[i].playerName,
                 col2X, startY + ((2 + i) * 10), scores->playerList[i].playerLevel,
                 col3X, startY + ((2 + i) * 10), scores->playerList[i].totalMonsterKills,
@@ -2093,7 +2094,7 @@ void GiexDisplayHighscoresMenuHUD(edict_t* ent, level_highscores_t* scores)
             // Blank entry
             Com_sprintf(combuf, sizeof(combuf),
                 "xv %d yv %d string2 \"%d.\" ",
-                col0X, startY + ((2 + i) * 10), i);
+                col0X, startY + ((2 + i) * 10), i + 1);
             strcat(fullString, combuf);
         }
     }

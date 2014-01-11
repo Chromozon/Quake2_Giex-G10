@@ -103,6 +103,8 @@
 #define GIEX_STAT_MED_MONSTER_KILLS 7 //Stat slot for total number of kills on monsters levels 8 - 15
 #define GIEX_STAT_HI_MONSTER_KILLS 8 //Stat slot for total number of kills on monsters levels 16 - 23
 #define GIEX_STAT_VHI_MONSTER_KILLS 9 //Stat slot for total number of kills on monsters levels 24 - 30
+#define GIEX_STAT_CURRENT_SPREE 10 // Stat slot for current number of kills in a row without dieing
+#define GIEX_STAT_BEST_SPREE 11 // Stat slow for best number of kills in a row without dieing
 // ---
 
 typedef enum {
@@ -750,6 +752,7 @@ void Cmd_Score_f (edict_t *ent);
 void pluginPowerup(edict_t *ent, int pu, int item);
 void GiexPrintAllStats(edict_t* ent);
 void GiexPrintHighscores(edict_t* ent, level_highscores_t* scores);
+void GiexPrintSpree(edict_t* ent);
 
 //
 // g_items.c

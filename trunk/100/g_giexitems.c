@@ -1699,11 +1699,27 @@ void spawnItem(edict_t *targ, edict_t *attacker) {
 			spawn_num -= getRealRarity(info, mult1, mult2, mult3, mult4);
 		}
 	}
-	if (game.monsterhunt != 10) {
-		if (targ->svflags & SVF_MONSTER) {
-			gi.cprintf(attacker, PRINT_HIGH, "%s dropped a %s!\n", targ->monsterinfo.name, info->name);
-		} else {
-			gi.cprintf(attacker, PRINT_HIGH, "%s dropped a %s!\n", targ->client->pers.netname, info->name);
+	if (game.monsterhunt != 10)
+    {
+		if (targ->svflags & SVF_MONSTER) // Drop from a monster
+        {
+            if (info->rarity < 6) // god item drop; make the item name show up in green
+            {
+                gi.cprintf(attacker, PRINT_HIGH, "%s dropped a ", targ->monsterinfo.name);
+                gi.cprintf(attacker, PRINT_CHAT, "***%s!***\n", info->name);
+            }
+            else
+			    gi.cprintf(attacker, PRINT_HIGH, "%s dropped a %s!\n", targ->monsterinfo.name, info->name);
+		}
+        else // Drop from a player
+        {
+            if (info->rarity < 6) // god item drop; make the item name show up in green
+            {
+                gi.cprintf(attacker, PRINT_HIGH, "%s dropped a ", targ->client->pers.netname);
+                gi.cprintf(attacker, PRINT_CHAT, "***%s!***\n", info->name);
+            }
+            else
+                gi.cprintf(attacker, PRINT_HIGH, "%s dropped a %s!\n", targ->client->pers.netname, info->name);
 		}
 	}
 

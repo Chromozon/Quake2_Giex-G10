@@ -638,7 +638,7 @@ void M_SetEffects (edict_t *ent)
 
 	if (!(ent->monsterinfo.ability & GIEX_MABILITY_STEALTH)) {
 		if (ent->monsterinfo.skill > 7) {
-			ent->s.effects |= EF_COLOR_SHELL;
+            ent->s.effects |= EF_COLOR_SHELL;
 			if (ent->monsterinfo.skill < 16) { // 8 - 15 = green
 				ent->s.renderfx |= RF_SHELL_GREEN;
 			} else if (ent->monsterinfo.skill < 24) { // 16 - 23 = red
@@ -653,9 +653,9 @@ void M_SetEffects (edict_t *ent)
 		}
 	}
 	if (ent->monsterinfo.superchamp == 1) {
-		ent->s.effects |= EF_FLAG2;
+        ent->s.effects |= EF_TAGTRAIL;
 	} else if (ent->monsterinfo.superchamp == 2) {
-		ent->s.effects |= EF_FLAG1;
+        ent->s.effects |= EF_TAGTRAIL;
 	}
 
 	if (ent->powerarmor_time > level.time)

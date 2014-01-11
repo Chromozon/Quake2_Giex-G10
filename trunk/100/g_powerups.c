@@ -821,18 +821,27 @@ void addExp(edict_t *self, edict_t *target, int damage) {
 		}
 	}
 
+    // Grape:
+    // Adjust exp based off of level; exp gets really hard to earn at very high levels, so use a lower player level to give a slight boost
+    int playerLevel = self->radius_dmg;
+    if (self->radius_dmg > 300)
+        playerLevel = self->radius_dmg - 50;
+    if (self->radius_dmg > 400)
+        playerLevel = self->radius_dmg - 75;
+    if (self->radius_dmg > 550)
+        playerLevel = self->radius_dmg - 100;
+    if (self->radius_dmg > 700)
+        playerLevel = self->radius_dmg - 125;
+    if (self->radius_dmg > 900)
+        playerLevel = self->radius_dmg - 150;
+
 	if (target->svflags & SVF_MONSTER) {
 		if (damage < 1)
 			return;
 		if (coop->value) {
-			amt = ((float) points/(float) target->max_health) * EXP_MONSTER_MULT_COOP * ((float) (target->monsterinfo.level + 20) / (float) (self->radius_dmg + 20));
+			amt = ((float) points/(float) target->max_health) * EXP_MONSTER_MULT_COOP * ((float) (target->monsterinfo.level + 20) / (float) (playerLevel));
 		} else {
-			amt = ((float) points/(float) target->max_health) * EXP_MONSTER_MULT * ((float) (target->monsterinfo.level + 20) / (float) (self->radius_dmg + 20));
-		}
-
-		//Don't give as much exp if player is kamikaze'ing high-level monsters
-		if (self->radius_dmg / GIEX_MONSTER_PLAYERLEVEL_MULT < target->monsterinfo.skill * 0.75) {
-			amt *= 0.25;
+			amt = ((float) points/(float) target->max_health) * EXP_MONSTER_MULT * ((float) (target->monsterinfo.level + 20) / (float) (playerLevel));
 		}
 	} else if (target->client) {
 		if (damage < 0) { //self has healed target, give exp to Cleric class if target is on same team

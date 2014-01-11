@@ -90,17 +90,30 @@ void Killed (edict_t* targ, edict_t* inflictor, edict_t* attacker, int damage, v
             if (targ->client == attacker->client) // Suicide
             {
                 targ->client->pers.skills.stats[GIEX_STAT_OTHER_DEATHS]++;
+                targ->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE] = 0;
             }
             else if (targ->radius_dmg > attacker->radius_dmg) // Killed by lower level player
             {
                 targ->client->pers.skills.stats[GIEX_STAT_LOWER_PLAYER_DEATHS]++;
                 attacker->client->pers.skills.stats[GIEX_STAT_HIGHER_PLAYER_KILLS]++;
+
+                targ->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE] = 0;
+                attacker->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE]++;
+                if (attacker->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE] > attacker->client->pers.skills.stats[GIEX_STAT_BEST_SPREE])
+                    attacker->client->pers.skills.stats[GIEX_STAT_BEST_SPREE]++;
+
                 GiexUpdateHighscoreEntry(&levelHighscores, attacker, false);
             }
             else // Killed by higher level player
             {
                 targ->client->pers.skills.stats[GIEX_STAT_HIGHER_PLAYER_DEATHS]++;
                 attacker->client->pers.skills.stats[GIEX_STAT_LOWER_PLAYER_KILLS]++;
+
+                targ->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE] = 0;
+                attacker->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE]++;
+                if (attacker->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE] > attacker->client->pers.skills.stats[GIEX_STAT_BEST_SPREE])
+                    attacker->client->pers.skills.stats[GIEX_STAT_BEST_SPREE]++;
+
                 GiexUpdateHighscoreEntry(&levelHighscores, attacker, false);
             }
         }
@@ -109,10 +122,12 @@ void Killed (edict_t* targ, edict_t* inflictor, edict_t* attacker, int damage, v
             if (attacker->svflags & SVF_MONSTER) // Player got killed by monster
             {
                 targ->client->pers.skills.stats[GIEX_STAT_MONSTER_DEATHS]++;
+                targ->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE] = 0;
             }
             else // Player got killed by something in the world (suicide)
             {
                 targ->client->pers.skills.stats[GIEX_STAT_OTHER_DEATHS]++;
+                targ->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE] = 0;
             }
         }
     }
@@ -120,6 +135,10 @@ void Killed (edict_t* targ, edict_t* inflictor, edict_t* attacker, int damage, v
     {
         if (attacker->client) // Monster got killed by player
         {
+            attacker->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE]++;
+            if (attacker->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE] > attacker->client->pers.skills.stats[GIEX_STAT_BEST_SPREE])
+                attacker->client->pers.skills.stats[GIEX_STAT_BEST_SPREE]++;
+
             GiexUpdateHighscoreEntry(&levelHighscores, attacker, true);
             if (targ->monsterinfo.skill < 8)
                 attacker->client->pers.skills.stats[GIEX_STAT_LOW_MONSTER_KILLS]++;
@@ -1029,6 +1048,15 @@ int T_Damage (edict_t *targ, edict_t *inflictor, edict_t *attacker, vec3_t dir, 
 
 	take = damage;
 	save = 0;
+
+    // Players take more damage for every kill they rack up without dieing
+    // Forumla is 25% more damage for every 100 kills in a row, increases linearly as spree increases
+    // So if a player has killed 225 things in a row, they will take 56.25% more damage
+    if (targ->client)
+    {
+        float damageIncreaseMult = 1 + (0.0025 * (float)targ->client->pers.skills.stats[GIEX_STAT_CURRENT_SPREE]);
+        take = ceil((float)take * damageIncreaseMult);
+    }
 
 	// check for godmode
 	if ((targ->flags & FL_GODMODE) && !(dflags & DAMAGE_NO_PROTECTION) && (damage > 0)) {
