@@ -61,6 +61,7 @@ p_hud.o \
 p_trail.o \
 p_view.o \
 p_weapon.o \
+md5.o \
 q_shared.o
 
 all: game
